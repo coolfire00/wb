@@ -12,53 +12,72 @@ import weibo4j.model.StatusWapper;
 import weibo4j.model.WeiboException;
 
 public class GetWeibo {
-	private  Timeline tm = null;
+	private Timeline tm = null;
 
-	
+	private Paging mp = new Paging();
+
+	private String content = null;
+
 	public GetWeibo(String token) {
 		String access_token = token;
-		 tm = new Timeline();
-		 tm.client.setToken(access_token);
+		tm = new Timeline();
+		tm.client.setToken(access_token);
 	}
 
-	public void getWeibo(long sinceId) {
-		long sinceID = sinceId;
-		Paging mp = new Paging();
-		if (sinceID != 0) {
-			mp.setSinceId(sinceID);
+	/**
+	 * 
+	 * @param sinceId
+	 *            get weibo from the sinceId
+	 * @param fileName
+	 *            file to store weibo status
+	 * @param watiTime
+	 *            wait time
+	 */
+	public void getWeibo(long sinceId, String fileName, int watiTime) {
+		content = null;
+		if (sinceId != 0) {
+			mp.setSinceId(sinceId);
 		}
+		mp.setCount(200);
 		try {
 			StatusWapper status = tm.getHomeTimeline(0, 0, mp);
 			for (Status s : status.getStatuses()) {
 				Log.logInfo(s.toString());
+				content += s.toString() + "\n";
 			}
-			sinceID = getSinceID(status.getStatuses(),sinceId);	
+			sinceId = getSinceID(status.getStatuses(), sinceId);
+
+			if (content!=null) {
+				appendContent(fileName, content);
+
+			}
 			try {
-				Thread.sleep(10000);
+				Thread.sleep(watiTime);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			getWeibo(sinceID);
+
+			getWeibo(sinceId, fileName, watiTime);
 		} catch (WeiboException e) {
 			e.printStackTrace();
-			if(sinceID!=0){
-			getWeibo(sinceID);
-			}else{
-				getWeibo(sinceId);
+			if (sinceId != 0) {
+				getWeibo(sinceId, fileName, watiTime);
+			} else {
+				getWeibo(sinceId, fileName, watiTime);
 			}
 		}
 	}
 
-	private long getSinceID(List<Status> ls,long oldSinceId) {
+	private long getSinceID(List<Status> ls, long oldSinceId) {
 		long id = 0;
-		if(ls.isEmpty()){
+		if (ls.isEmpty()) {
 			return oldSinceId;
-		}else{
-			String s=ls.get(0).toString();
-		String idch = s.substring(s.lastIndexOf("mid=") + 4,
-				s.lastIndexOf("mid=") + 20);
-		id = Long.parseLong(idch);
-		return id;
+		} else {
+			String s = ls.get(0).toString();
+			String idch = s.substring(s.lastIndexOf("mid=") + 4,
+					s.lastIndexOf("mid=") + 20);
+			id = Long.parseLong(idch);
+			return id;
 		}
 	}
 
